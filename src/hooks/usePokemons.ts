@@ -70,7 +70,7 @@ export function usePokemons() {
 
       await MySwal.fire({
         icon: "success",
-        title: `<p>O pokemon ${name} foi deletado com sucesso?</p>`,
+        title: `<p>O pokemon ${name} foi deletado com sucesso!</p>`,
         footer: "Pokemon 2021",
         confirmButtonText: `Ok`,
       });
