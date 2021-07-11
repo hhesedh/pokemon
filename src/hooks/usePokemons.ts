@@ -61,12 +61,13 @@ export function usePokemons() {
         confirmButtonText: `Ok`,
         denyButtonText: `Cancelar`,
       });
-      if (swalResponse.isConfirmed) {
-        const pokemonsFiltered = pokemons.filter(
-          (pokemon) => pokemon.name !== name
-        );
-        setPokemons(pokemonsFiltered);
-      }
+      if (!swalResponse.isConfirmed) return;
+
+      const pokemonsFiltered = pokemons.filter(
+        (pokemon) => pokemon.name !== name
+      );
+      setPokemons(pokemonsFiltered);
+
       await MySwal.fire({
         icon: "success",
         title: `<p>O pokemon ${name} foi deletado com sucesso?</p>`,
