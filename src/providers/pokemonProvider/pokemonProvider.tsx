@@ -11,12 +11,11 @@ interface IPokemonContext {
 }
 const PokemonContext = createContext<IPokemonContext | null>(null);
 
-export const PokemonProvider = ({ children }: { children: ReactNode }) => {
-  const value = useProvidePokemon();
-  return (
-    <PokemonContext.Provider value={value}>{children}</PokemonContext.Provider>
-  );
-};
+export const PokemonProvider = ({ children }: { children: ReactNode }) => (
+  <PokemonContext.Provider value={useProvidePokemon()}>
+    {children}
+  </PokemonContext.Provider>
+);
 
 export const usePokemonContext = () => {
   const context = useContext(PokemonContext);
