@@ -1,87 +1,72 @@
-import { useEffect, useState } from "react";
-import { pokemonUrl } from "../constants/endpoint";
-import { Request } from "../request/request";
+import { useCallback, useEffect } from "react";
 
-import Swal from "sweetalert2";
+import Swal, { SweetAlertOptions } from "sweetalert2";
 import withReactContent from "sweetalert2-react-content";
+import { usePokemonContext } from "../providers/pokemonProvider/pokemonProvider";
 
 const MySwal = withReactContent(Swal);
 
-const { isRequestError } = Request;
-const api = new Request();
+const fireConfigs = (name: string) => {
+  const fireConfirmConfig: SweetAlertOptions = {
+    icon: "warning",
+    title: `<p>Tem certeza que deseja deletar o pokemon ${name}?</p>`,
+    footer: "Pokemon 2021",
+    showDenyButton: true,
+    confirmButtonText: `Ok`,
+    denyButtonText: `Cancelar`,
+  };
 
-interface IPokemon {
-  name: string;
-  url: string;
-}
-interface IPokemonResponse {
-  count: number;
-  previous?: string;
-  next?: string;
-  results: IPokemon[];
-}
+  const fireSuccessConfig: SweetAlertOptions = {
+    icon: "success",
+    title: `<p>O pokemon ${name} foi deletado com sucesso!</p>`,
+    footer: "Pokemon 2021",
+    confirmButtonText: `Ok`,
+  };
+
+  return { fireConfirmConfig, fireSuccessConfig };
+};
+
+const fireErrorConfig: SweetAlertOptions = {
+  icon: "error",
+  title: "Oops...",
+  text: "Something went wrong!",
+};
 
 export function usePokemons() {
-  const [pokemons, setPokemons] = useState<IPokemon[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(false);
+  const {
+    pokemons,
+    isLoading,
+    hasError,
+    getPokemons,
+    deletePokemon: delPokemon,
+  } = usePokemonContext();
 
   useEffect(() => {
-    async function getPokemons() {
+    async function getValues() {
+      await getPokemons();
+    }
+    getValues();
+  }, [getPokemons]);
+
+  const deletePokemon = useCallback(
+    async (name: string) => {
       try {
-        setLoading(true);
-        const response = await api.get<IPokemonResponse>(pokemonUrl);
-        if (response && response.data) {
-          const { data } = response;
-          setPokemons(data.results);
-        }
-        setError(false);
+        const { fireConfirmConfig, fireSuccessConfig } = fireConfigs(name);
+        const swalResponse = await MySwal.fire(fireConfirmConfig);
+        if (!swalResponse.isConfirmed) return;
+        delPokemon(name);
+        await MySwal.fire(fireSuccessConfig);
       } catch (err) {
-        if (isRequestError(err)) {
-          console.log("é um erro de request:");
-        }
-        setError(true);
-        console.log(err);
+        MySwal.fire(fireErrorConfig);
       }
+    },
+    [delPokemon]
+  );
 
-      setLoading(false);
-    }
-
-    getPokemons();
-  }, []);
-
-  async function deletePokemon(name: string) {
-    try {
-      /* aqui pode ter estado de erro ou loading */
-      const swalResponse = await MySwal.fire({
-        icon: "warning",
-        title: `<p>Tem certeza que deseja deletar o pokemon ${name}?</p>`,
-        footer: "Pokemon 2021",
-        showDenyButton: true,
-        confirmButtonText: `Ok`,
-        denyButtonText: `Cancelar`,
-      });
-      if (!swalResponse.isConfirmed) return;
-
-      const pokemonsFiltered = pokemons.filter(
-        (pokemon) => pokemon.name !== name
-      );
-      setPokemons(pokemonsFiltered);
-
-      await MySwal.fire({
-        icon: "success",
-        title: `<p>O pokemon ${name} foi deletado com sucesso!</p>`,
-        footer: "Pokemon 2021",
-        confirmButtonText: `Ok`,
-      });
-    } catch (err) {
-      MySwal.fire({
-        icon: "error",
-        title: "Oops...",
-        text: "Something went wrong!",
-      });
-    }
-  }
-
-  return { pokemons, loading, error, deletePokemon };
+  return {
+    pokemons,
+    isLoading,
+    hasError,
+    deletePokemon,
+  };
 }
