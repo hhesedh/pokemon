@@ -1,15 +1,8 @@
 import { createContext, ReactNode, useContext } from "react";
-import IPokemon from "../../models/IPokemon";
 import { usePokemonReducer } from "./hooks/usePokemonReducer";
 
-interface IPokemonContext {
-  pokemons: IPokemon[] | null;
-  hasError: boolean;
-  isLoading: boolean;
-  getPokemons(): Promise<void>;
-  deletePokemon(name: string): void;
-}
-const PokemonContext = createContext<IPokemonContext | null>(null);
+type ContextType = ReturnType<typeof usePokemonReducer> | null;
+const PokemonContext = createContext<ContextType>(null);
 
 export const PokemonProvider = ({ children }: { children: ReactNode }) => (
   <PokemonContext.Provider value={usePokemonReducer()}>

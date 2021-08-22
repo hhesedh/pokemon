@@ -2,6 +2,14 @@ import { Dispatch, useReducer, useCallback } from "react";
 import IPokemon from "../../../models/IPokemon";
 import { getPokemons as requestPokemon } from "../../../services/http";
 
+interface UserPokemonReducerReturnType {
+  getPokemons: () => Promise<void>;
+  deletePokemon: (name: string) => void;
+  pokemons: IPokemon[] | null;
+  isLoading: boolean;
+  hasError: boolean;
+}
+
 type Action =
   | { type: "load" }
   | { type: "success"; payload: IPokemon[] }
@@ -20,7 +28,12 @@ const initialState: State = {
   hasError: false,
 };
 
-function pokemonReducer(state: State, action: Action): State {
+/* HELPERS */
+const delPokemonFromState = ({ name, state }: { name: string; state: State }) =>
+  state.pokemons ? state.pokemons.filter((it) => it.name !== name) : null;
+
+/* REDUCER */
+function reducer(state: State, action: Action): State {
   switch (action.type) {
     case "load":
       return { ...state, isLoading: true, hasError: false };
@@ -35,19 +48,18 @@ function pokemonReducer(state: State, action: Action): State {
       return { ...state, isLoading: false, hasError: true };
 
     case "delete":
-      const pokemonFiltered = state.pokemons?.filter(
-        (pokemon) => pokemon.name !== action.payload
-      );
-      return pokemonFiltered
-        ? { ...state, pokemons: pokemonFiltered }
-        : { ...state };
+      return {
+        ...state,
+        pokemons: delPokemonFromState({ state, name: action.payload }),
+      };
 
     default:
       return { ...state };
   }
 }
 
-const get = (dispatch: Dispatch<Action>) => async () => {
+/* Action Creators */
+const getPokemons = (dispatch: Dispatch<Action>) => async () => {
   try {
     dispatch({ type: "load" });
 
@@ -60,17 +72,19 @@ const get = (dispatch: Dispatch<Action>) => async () => {
     dispatch({ type: "error" });
   }
 };
-const del = (dispatch: Dispatch<Action>) => async (name: string) => {
+
+const deletePokemon = (dispatch: Dispatch<Action>) => (name: string) => {
   dispatch({ type: "delete", payload: name });
 };
 
-export const usePokemonReducer = () => {
-  const [state, dispatch] = useReducer(pokemonReducer, initialState);
-  const getPokemons = useCallback(() => get(dispatch)(), []);
-  const deletePokemon = useCallback((name: string) => del(dispatch)(name), []);
+export const usePokemonReducer = (): UserPokemonReducerReturnType => {
+  const [state, dispatch] = useReducer(reducer, initialState);
   return {
     ...state,
-    deletePokemon,
-    getPokemons,
+    getPokemons: useCallback(() => getPokemons(dispatch)(), []),
+    deletePokemon: useCallback(
+      (name: string) => deletePokemon(dispatch)(name),
+      []
+    ),
   };
 };
